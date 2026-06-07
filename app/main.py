@@ -1,8 +1,7 @@
 from fastapi import FastAPI, status, HTTPException
 from pydantic import ValidationError
-from typing import Any
 from scalar_fastapi import get_scalar_api_reference
-from .schemas import ShipmentRead, ShipmentStatus, ShipmentCreate, ShipmentUpdate
+from .schemas import ShipmentRead, ShipmentCreate
 from .database import Database
 from sqlite3 import Error as SQLiteError
 app = FastAPI()
@@ -27,9 +26,6 @@ def get_shipment(id:int):
 
 @app.post("/shipment", response_model=ShipmentRead|None)
 def add_shipment(shipment:ShipmentCreate):
-    # try:
-    #     db.create(shipment)
-    # except T:
     new_id = db.create(shipment)
     return new_id
 

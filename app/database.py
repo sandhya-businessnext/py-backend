@@ -5,13 +5,21 @@ from typing import Any
 
 class Database:
     def __init__(self):
-        self.conn = sqlite3.connect("shipments.db",check_same_thread=False)
+        pass
+
+    
+    def __enter__(self):
+        print("Connecting to database")
+        self.connect_to_db("shipments.db")
+        self.create_table('shipment')
+        return self
+
+       
+    def connect_to_db(self, db_name:str):
+        self.conn = sqlite3.connect(db_name, check_same_thread=False)
         self.conn.row_factory = sqlite3.Row
         self.cur = self.conn.cursor()
-        self.create_table('shipment')
-        # self.create({"content": "Licht", "weight": 200, "status": "In Transit"})
-        self.delete(2)
-       
+    
     def create_table(self,name:str):
         self.cur.execute(f"""
          CREATE TABLE IF NOT EXISTS {name} (
@@ -58,4 +66,12 @@ class Database:
         self.conn.commit()
         return self.cur.rowcount > 0
 
-db = Database()
+    def close(self):
+        self.conn.close()
+    
+    def __exit__(self, *args):
+        print("Closing database connection")
+        self.close()
+
+with Database() as db:
+    print(db.get(4))
