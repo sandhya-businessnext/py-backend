@@ -1,6 +1,7 @@
 import sqlite3
 from .schemas import ShipmentCreate, ShipmentUpdate
 from typing import Any
+from contextlib import contextmanager
 
 
 class Database:
@@ -69,9 +70,22 @@ class Database:
     def close(self):
         self.conn.close()
     
-    def __exit__(self, *args):
-        print("Closing database connection")
-        self.close()
+    # def __exit__(self, *args):
+    #     print("Closing database connection")
+    #     self.close()
 
-with Database() as db:
-    print(db.get(4))
+# with Database() as db:
+#     print(db.get(4))
+
+@contextmanager
+def managed_db():
+    db = Database()
+    db.connect_to_db("shipments.db")
+    db.create_table('shipment')
+    yield db
+
+    # close
+    db.close()
+
+with managed_db() as db:
+    print(db.get_all())
