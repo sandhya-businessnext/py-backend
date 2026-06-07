@@ -1,8 +1,26 @@
 from pydantic import BaseModel, Field
-from typing import Literal
+from enum import Enum
+
+class ShipmentStatus(Enum):
+    PLACED = "Placed"
+    IN_TRANSIT = "In Transit"
+    DELIVERED = "Delivered"
+    PENDING = "Pending"
 
 
-class Shipment(BaseModel):
+class BaseShipment(BaseModel):
+    id:int | None
     content:str = Field(max_length=100)
     weight:float  = Field(le=25, ge=0, default=0)
-    status:Literal["Placed" ,"In Transit" , "Delivered" , "Pending"] = Field(default="Placed")
+    status:ShipmentStatus = ShipmentStatus.PLACED
+
+class ShipmentRead(BaseShipment):
+    pass
+
+class ShipmentCreate(BaseShipment):
+    id:None = None
+
+class ShipmentUpdate(BaseModel):
+    content: str | None = Field(default=None, max_length=100)
+    weight: float | None = Field(default=None, le=25, ge=0)
+    status: ShipmentStatus | None = None
