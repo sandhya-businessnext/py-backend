@@ -1,11 +1,6 @@
 from pydantic import BaseModel, Field
-from enum import Enum
+from app.database.models import ShipmentStatus
 
-class ShipmentStatus(Enum):
-    PLACED = "Placed"
-    IN_TRANSIT = "In Transit"
-    DELIVERED = "Delivered"
-    PENDING = "Pending"
 
 
 class BaseShipment(BaseModel):
