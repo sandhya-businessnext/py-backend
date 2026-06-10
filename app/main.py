@@ -1,23 +1,34 @@
-from fastapi import FastAPI, status, HTTPException
+from fastapi import FastAPI, status, HTTPException, Depends
 from pydantic import ValidationError
 from scalar_fastapi import get_scalar_api_reference
 from .schemas import ShipmentRead, ShipmentCreate
-from .database import Database
 from sqlite3 import Error as SQLiteError
-app = FastAPI()
+from contextlib import asynccontextmanager
+from app.database.models import create_db_tables, Shipment
+from app.database.session import SessionDep
 
-db =  Database()
+@asynccontextmanager
+async def lifespan_handler(app:FastAPI):
+    print("Server Starting up...")
+    create_db_tables()
+    yield
+    print("...Server shutting down")
+
+
+app = FastAPI(lifespan=lifespan_handler)
+
+# db =  Database()
 
 
 
 
 @app.get("/shipments",response_model=list[ShipmentRead])
-def get_all_shipments():
-    return db.get_all()
+def get_all_shipments(session:SessionDep):
+    return session.get_all(Shipment)
 
 @app.get("/shipment", response_model=ShipmentRead)
-def get_shipment(id:int):
-    shipment = db.get(id)
+def get_shipment(id:int, session:SessionDep):
+    shipment = session.get(Shipment, ident=id)
     if shipment is not None:
         return shipment
     raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Shipment not found")
@@ -25,13 +36,13 @@ def get_shipment(id:int):
     
 
 @app.post("/shipment", response_model=ShipmentRead|None)
-def add_shipment(shipment:ShipmentCreate):
-    new_id = db.create(shipment)
+def add_shipment(shipment:ShipmentCreate, session:SessionDep):
+    new_id = session.add(Shipment())
     return new_id
 
 
 @app.put("/shipment")
-def update_shipment(id:int, shipment:ShipmentRead):
+def update_shipment(id:int, shipment:ShipmentRead, db:SessionDep):
    try:
      shipment = db.update(id, shipment)
     
@@ -51,7 +62,7 @@ def update_shipment(id:int, shipment:ShipmentRead):
 #     return {"detail": "Shipment updated successfully", "shipment": shipments[id]}
 
 @app.delete("/shipment")
-def delete_shipment(id:int):
+def delete_shipment(id:int, db:SessionDep):
     if not db.delete(id):
         raise HTTPException(sttaus_code=status.HTTP_404_NOT_FOUND, detail="Shipment not found")
     return {"detail": f"Shipment #{id} deleted"}
