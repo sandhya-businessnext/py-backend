@@ -1,5 +1,5 @@
 import sqlite3
-from .schemas import ShipmentCreate, ShipmentUpdate
+from .api.schemas.shipment_schema import ShipmentCreate, ShipmentUpdate
 from typing import Any
 from contextlib import contextmanager
 
