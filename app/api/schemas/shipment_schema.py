@@ -1,8 +1,8 @@
 from uuid import UUID
 
 from pydantic import BaseModel, Field
-from app.database.models import ShipmentStatus
 
+from app.database.models import ShipmentStatus
 
 
 class BaseShipment(BaseModel):

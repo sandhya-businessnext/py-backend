@@ -1,11 +1,11 @@
 from fastapi import APIRouter, HTTPException, status
 from pydantic import ValidationError
-from ..schemas.shipment_schema import ShipmentRead, ShipmentCreate
-from ...database.session import SessionDep
+
 from ...database.models import Shipment
+from ...dependencies import SessionDep
+from ..schemas.shipment_schema import ShipmentCreate, ShipmentRead
 
-
-router = APIRouter()
+router = APIRouter(prefix="/api", tags=["Shipment"])
 
 
 @router.get("/shipments",response_model=list[ShipmentRead])
@@ -54,5 +54,5 @@ async def update_shipment(id:int, shipment:ShipmentRead, db:SessionDep):
 @router.delete("/shipment")
 async def delete_shipment(id:int, db:SessionDep):
     if not await db.delete(id):
-        raise HTTPException(sttaus_code=status.HTTP_404_NOT_FOUND, detail="Shipment not found")
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Shipment not found")
     return {"detail": f"Shipment #{id} deleted"}

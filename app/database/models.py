@@ -1,10 +1,12 @@
+from datetime import datetime
+from enum import Enum
+from uuid import UUID, uuid4
+
+from pydantic import EmailStr
 from sqlalchemy import Column
 from sqlalchemy.dialects import postgresql
-from sqlmodel import Relationship, SQLModel, Field
-from enum import Enum
-from datetime import datetime
-from pydantic import EmailStr
-from uuid import uuid4, UUID
+from sqlmodel import Field, Relationship, SQLModel
+
 
 class ShipmentStatus(Enum):
     PLACED = "Placed"
@@ -22,7 +24,7 @@ class Shipment(SQLModel, table=True): # table True is used to indicate that this
     weight: float = Field(ge=0,le=25)
     status: ShipmentStatus
     estimated_delivery: datetime
-    seller_id: str = Field(foreign_key="seller_table.id")
+    seller_id: UUID = Field(foreign_key="seller_table.id")
     seller: "Seller" = Relationship(back_populates="shipments")
 
 
