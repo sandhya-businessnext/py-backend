@@ -3,8 +3,19 @@ from uuid import uuid4
 
 import jwt
 from fastapi import HTTPException, status
+from passlib.context import CryptContext
 
 from ..config import security_settings
+
+_password_context = CryptContext(schemes=["argon2", "bcrypt"])
+
+
+def hash_password(password: str) -> str:
+    return _password_context.hash(password)
+
+
+def verify_password(plain: str, hashed: str) -> bool:
+    return _password_context.verify(plain, hashed)
 
 
 def generate_access_token(data:dict, expiry: timedelta = timedelta(days=1)) -> str:

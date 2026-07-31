@@ -7,6 +7,7 @@ from sqlalchemy.ext.asyncio import create_async_engine
 from sqlmodel import SQLModel
 
 from app.config import db_settings
+from app.database.models import DeliveryPartner, Seller, Shipment  # noqa: F401 — registers tables with SQLModel.metadata
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.
