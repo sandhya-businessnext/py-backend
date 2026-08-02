@@ -22,10 +22,8 @@ async def get_token(service:DeliveryPartnerServiceDep, request_form:Annotated[OA
    token =  await service.token(request_form.username, request_form.password)
    return {"message":"Login successful", "token":token}
     
-@router.post("/dashboard")
+@router.post("/getAvailablePartner")
 async def get_dashboard(token:OAuthDep, service:SellerServiceDep) -> PartnerRead:
     data =  verify_access_token(token)
     print(data)
     return await service.session.get(DeliveryPartner,data["user"]["id"])
-
-

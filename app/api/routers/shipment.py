@@ -56,3 +56,6 @@ async def delete_shipment(id:int, db:SessionDep):
     if not await db.delete(id):
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Shipment not found")
     return {"detail": f"Shipment #{id} deleted"}
+
+# @router.post("/assign_shipment")
+# async def assign_shipment(shipment_id:int, delivery_partner_id:int)

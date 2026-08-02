@@ -1,6 +1,6 @@
 from datetime import datetime
 from enum import Enum
-from typing import Optional
+
 from uuid import UUID, uuid4
 
 from pydantic import EmailStr
@@ -25,6 +25,10 @@ class Shipment(SQLModel, table=True): # table True is used to indicate that this
     weight: float = Field(ge=0,le=25)
     status: ShipmentStatus
     destination: int
+
+    address: str | None
+    zip_code: str | None
+
     estimated_delivery: datetime
     created_at: datetime = Field(
         sa_column=Column(
@@ -40,6 +44,22 @@ class Shipment(SQLModel, table=True): # table True is used to indicate that this
         postgresql.UUID(as_uuid=True), ForeignKey("delivery_partner.id"), nullable=True))
     delivery_partner:"DeliveryPartner" = Relationship(back_populates="shipments",
                                                       sa_relationship_kwargs={"lazy":"selectin"})
+    timeline:"ShipmentEvent" = Relationship(back_populates="shipment",
+                                            sa_relationship_kwargs={"lazy":"selectin"})
+
+
+class ShipmentEvent(SQLModel, table=True):
+    __tablename__="shipment_event"
+    id:UUID = Field(sa_column=Column(
+        postgresql.UUID(as_uuid=True), default=uuid4, primary_key=True
+    ))
+    created_at:datetime = Field(sa_column=Column(postgresql.TIMESTAMP, default=datetime.now))
+    status: ShipmentStatus
+    location: str
+
+    description:str | None =  Field(default=None)
+    shipment_id: UUID = Field(foreign_key="shipments_table.id")
+    shipment:Shipment = Relationship(back_populates="timeline", sa_relationship_kwargs={"lazy":"selectin"})
 
 
 
@@ -62,6 +82,8 @@ class Seller(User, table=True):
         )
     shipments: list[Shipment] = Relationship(back_populates="seller",
                                              sa_relationship_kwargs={"lazy":"selectin"})
+
+
 
 class DeliveryPartner(User, table=True):
     __tablename__ = "delivery_partner"
@@ -86,3 +108,11 @@ class DeliveryPartner(User, table=True):
         back_populates="delivery_partner",
         sa_relationship_kwargs={"lazy":"selectin"}
     )
+
+    @property
+    def active_shipments(self) -> list[Shipment]:
+        return [shipment for shipment in self.shipments if shipment.status != ShipmentStatus.DELIVERED]
+
+    @property
+    def current_handling_capacity(self)-> int:
+        return self.max_handling_capacity - len(self.active_shipments)
