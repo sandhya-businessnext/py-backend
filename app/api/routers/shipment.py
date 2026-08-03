@@ -1,61 +1,54 @@
+from uuid import UUID
+
 from fastapi import APIRouter, HTTPException, status
-from pydantic import ValidationError
 
-from ...database.models import Shipment
-from ...dependencies import SessionDep
-from ..schemas.shipment_schema import ShipmentCreate, ShipmentRead
+from ...dependencies import DeliveryPartnerDep, SellerDep, ShipmentServiceDep
+from ..schemas.shipment_schema import ShipmentCreate, ShipmentRead, ShipmentUpdate
 
-router = APIRouter(prefix="/api", tags=["Shipment"])
+router = APIRouter(prefix="/shipment", tags=["Shipment"])
 
 
-@router.get("/shipments",response_model=list[ShipmentRead])
-async def get_all_shipments(session:SessionDep):
-    return await session.get_all(Shipment)
+### Read a shipment by id
+@router.get("/", response_model=ShipmentRead)
+async def get_shipment(id: UUID, service: ShipmentServiceDep):
+    # Check for shipment with given id
+    shipment = await service.get(id)
 
-@router.get("/shipment", response_model=ShipmentRead)
-async def get_shipment(id:int, session:SessionDep):
-    shipment = await session.get(Shipment, ident=id)
-    if shipment is not None:
-        return shipment
-    raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Shipment not found")
-    
-    
+    if shipment is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Given id doesn't exist!",
+        )
 
-@router.post("/shipment", response_model=ShipmentRead|None)
-async def add_shipment(shipment:ShipmentCreate, session:SessionDep):
-    new_id = session.add(Shipment())
-    await session.commit()
-    await session.refresh(shipment)
-    return new_id
+    return shipment
 
 
-@router.put("/shipment")
-async def update_shipment(id:int, shipment:ShipmentRead, db:SessionDep):
-   try:
-     shipment = db.update(id, shipment)
-     await db.commit()
-     await db.refresh(shipment)
-    
-     return {"detail":"Shipment updated successfully", "shipment":shipment}
-   except ValidationError as e:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
-    
+### Create a new shipment
+@router.post("/", response_model=ShipmentRead)
+async def submit_shipment(
+    seller: SellerDep,
+    shipment: ShipmentCreate,
+    service: ShipmentServiceDep,
+):
+    return await service.add(shipment, seller)
 
-# @router.patch("/shipment")
-# def patch_shipment(id:int, shipment:ShipmentUpdate):
-#     if id not in shipments:
-#         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Shipment not found")
-#     updates = shipment.model_dump(exclude_none=True)
-#     if "status" in updates:
-#         updates["status"] = updates["status"].value
-#     shipments[id].update(updates)
-#     return {"detail": "Shipment updated successfully", "shipment": shipments[id]}
 
-@router.delete("/shipment")
-async def delete_shipment(id:int, db:SessionDep):
-    if not await db.delete(id):
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Shipment not found")
-    return {"detail": f"Shipment #{id} deleted"}
+### Update fields of a shipment
+@router.patch("/", response_model=ShipmentRead)
+async def update_shipment(
+    id: UUID,
+    shipment_update: ShipmentUpdate,
+    partner: DeliveryPartnerDep,
+    service: ShipmentServiceDep,
+):
+    return await service.update(id, shipment_update, partner)
 
-# @router.post("/assign_shipment")
-# async def assign_shipment(shipment_id:int, delivery_partner_id:int)
+
+### Cancel a shipment by id
+@router.get("/cancel", response_model=ShipmentRead)
+async def cancel_shipment(
+    id: UUID,
+    seller: SellerDep,
+    service: ShipmentServiceDep,
+):
+    return await service.cancel(id, seller)

@@ -1,23 +1,30 @@
+from datetime import datetime
 from uuid import UUID
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, EmailStr, Field
 
-from app.database.models import ShipmentStatus
+from app.database.models import ShipmentEvent, ShipmentStatus
 
 
 class BaseShipment(BaseModel):
-    id:UUID | None
-    content:str = Field(max_length=100)
-    weight:float  = Field(le=25, ge=0, default=0)
-    status:ShipmentStatus = ShipmentStatus.PLACED
+    content: str
+    weight: float = Field(le=25)
+    destination: int
+
 
 class ShipmentRead(BaseShipment):
-    pass
+    id: UUID
+    timeline: list[ShipmentEvent]
+    estimated_delivery: datetime
+
 
 class ShipmentCreate(BaseShipment):
-    id:None = None
+    pass
+    
 
 class ShipmentUpdate(BaseModel):
-    content: str | None = Field(default=None, max_length=100)
-    weight: float | None = Field(default=None, le=25, ge=0)
-    status: ShipmentStatus | None = None
+    location: int | None = Field(default=None)
+    status: ShipmentStatus | None = Field(default=None)
+    description: str | None = Field(default=None)
+    estimated_delivery: datetime | None = Field(default=None)
+    
